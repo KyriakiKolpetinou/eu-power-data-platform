@@ -1,0 +1,24 @@
+# Credentials. First rule, on purpose.
+*.json
+!data/sample.json
+.env
+credentials/
+*-key.json
+service-account*.json
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+
+# dbt
+dbt_power/target/
+dbt_power/dbt_packages/
+dbt_power/logs/
+logs/
+.user.yml
+
+# Local data pulls
+data/
+!data/.gitkeep

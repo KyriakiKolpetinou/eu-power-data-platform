@@ -1,0 +1,51 @@
+version: 2
+
+sources:
+  - name: raw
+    description: >
+      Append-only landing zone. One row per (country, timestamp, series) per
+      ingestion run. Nothing here is ever updated or deleted; corrections
+      arrive as new rows with a later ingested_at.
+    database: power-platform-kk
+    schema: power_raw
+    tables:
+      - name: observations
+        description: >
+          Flattened energy-charts v2 responses. Holds both actuals
+          (public_power) and the operator's published day-ahead forecast
+          (public_power_forecast), distinguished by the source column.
+        config:
+          loaded_at_field: ingested_at
+          freshness:
+            warn_after: {count: 26, period: hour}
+            error_after: {count: 48, period: hour}
+        columns:
+          - name: country
+            description: ISO-3166 alpha-2, lowercase, as passed to the API.
+          - name: ts_utc
+            description: Observation timestamp in UTC. Native resolution, not resampled.
+          - name: ts_local
+            description: >
+              Same instant in the source's local timezone, with offset. Kept
+              because electricity consumption follows local clocks, so
+              hour-of-day features must be local rather than UTC.
+          - name: series_id
+            description: >
+              Series identifier exactly as the API returned it. 'load' in both
+              endpoints; note that /v2/total_power instead reports
+              'load_incl_self_consumption', which is a different quantity and
+              not comparable to the forecast.
+          - name: value
+            description: >
+              Instantaneous power, normally MW. Check the unit column — two
+              series are percentages.
+          - name: unit
+            description: Per-series unit, overriding the response-level default.
+          - name: source
+            description: Which endpoint the row came from.
+          - name: available_until
+            description: >
+              How far the source considers data available. Actuals lag roughly
+              an hour behind real time, so this is how completeness is checked.
+          - name: ingested_at
+            description: When this row was fetched. The de-duplication key.
