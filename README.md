@@ -1,5 +1,8 @@
 # European electricity load: a tested data platform
 
+**[Live dashboard →](https://eu-power-data-platform-cksatfe3czyfm7xbxjjete.streamlit.app/)**
+
+
 A pipeline that pulls German electricity load from a live public API, lands it
 in BigQuery, transforms it with dbt under test, and forecasts next-day demand —
 evaluated against the forecast the grid operator itself published.
