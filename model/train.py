@@ -225,6 +225,11 @@ def main() -> None:
     report(bt)
 
     Path(args.output).parent.mkdir(parents=True, exist_ok=True)
+    # Cast date_local from BigQuery's dbdate to a plain string. Otherwise the
+    # parquet carries a custom dtype that only reads back if db-dtypes is
+    # imported — an unwanted BigQuery dependency for anything downstream.
+    bt = bt.copy()
+    bt["date_local"] = pd.to_datetime(bt["date_local"]).dt.date.astype("string")
     bt.to_parquet(args.output, index=False)
     log.info("wrote %s", args.output)
 
