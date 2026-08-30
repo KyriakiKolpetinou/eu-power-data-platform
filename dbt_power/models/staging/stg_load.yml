@@ -1,0 +1,51 @@
+version: 2
+
+models:
+  - name: stg_load
+    description: >
+      Electricity load in MW at the source's native 15-minute resolution, one
+      row per country, timestamp and series type, latest ingested version only.
+      Both actuals and the operator's day-ahead forecast.
+    columns:
+      - name: observation_key
+        description: country + series type + UTC timestamp. One row per observation.
+        tests:
+          - unique
+          - not_null
+
+      - name: country
+        tests:
+          - not_null
+
+      - name: ts_utc
+        tests:
+          - not_null
+
+      - name: series_type
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['actual', 'forecast']
+              # An error rather than a warning: an unrecognised value here means
+              # the case expression missed a new source, which would silently
+              # exclude data from every downstream model.
+
+      - name: load_mw
+        description: >
+          Nulls are expected occasionally — the API publishes a timestamp before
+          the measurement settles. A handful is normal; a wall of them means the
+          feed is broken.
+        tests:
+          - not_null:
+              config:
+                severity: warn
+
+      - name: interval_minutes
+        tests:
+          - accepted_values:
+              values: [15, 60]
+              quote: false
+              config:
+                severity: warn
+                # A change here means the publication interval moved upstream,
+                # which silently changes what an hourly mean represents.

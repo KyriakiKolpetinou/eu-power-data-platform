@@ -1,0 +1,49 @@
+version: 2
+
+models:
+  - name: fct_load_hourly
+    description: >
+      Hourly electricity load by country and series type. The modelling grain.
+      load_mw is the mean of sub-hourly instantaneous readings, not the sum.
+    columns:
+      - name: load_hour_key
+        tests: [unique, not_null]
+      - name: hour_utc
+        tests: [not_null]
+      - name: load_mw
+        tests:
+          - not_null:
+              config:
+                severity: warn
+      - name: is_complete_hour
+        description: >
+          False when fewer readings arrived than the interval implies. Filter on
+          this before training; keep it when charting, so gaps stay visible
+          rather than looking like low demand.
+        tests: [not_null]
+
+  - name: fct_forecast_accuracy
+    description: >
+      Actual load beside the operator's published day-ahead forecast, with the
+      error decomposed. The external baseline the model is measured against.
+    columns:
+      - name: accuracy_key
+        tests: [unique, not_null]
+      - name: actual_mw
+        tests: [not_null]
+      - name: forecast_mw
+        tests: [not_null]
+      - name: abs_pct_error
+        tests: [not_null]
+
+  - name: fct_load_revisions
+    description: >
+      One row per restatement of a previously published value. An empty table is
+      a meaningful result — it means the feed has not revised anything observed
+      so far. Fills in once the pipeline has run daily for some weeks.
+    columns:
+      - name: hours_after_observation
+        description: >
+          How long after the observed instant the correction arrived. The 95th
+          percentile answers "how long should the pipeline wait before treating
+          a day as final?"
